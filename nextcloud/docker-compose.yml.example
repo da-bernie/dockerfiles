@@ -1,0 +1,90 @@
+version: '3'
+
+services:
+
+  db:
+    build:
+       ./mariadb
+    environment:
+       - MYSQL_ROOT_PASSWORD="CHOOSE_A_PASSWORD"
+    env_file:
+       - db.env
+    volumes:
+       - "ADD_A_PATH":/var/lib/mysql
+    restart:
+       unless-stopped
+
+  redis:
+    image: redis
+    restart: unless-stopped
+
+  app:  
+    build: ./app
+    restart: unless-stopped
+    volumes:
+      - "ADD_A_PATH":/var/www/html
+      - "ADD_A_PATH":/var/www/html/config
+      - "ADD_A_PATH":/var/www/html/data
+    environment:
+      - VIRTUAL_HOST="ADD_VIRTUAL_HOST_NAME(S)"
+      - LETSENCRYPT_HOST="ADD_NAME"
+      - LETSENCRYPT_EMAIL="ADD_EMAIL"
+      - MYSQL_HOST=db
+      - NEXTCLOUD_ADMIN_USER="SET_USERNAME"
+      - NEXTCLOUD_ADMIN_PASSWORD="SET_PASSWORD"
+    env_file:
+      - db.env
+    depends_on:
+      - db
+      - redis
+    networks:
+      - proxy-tier
+      - default
+
+  cron:
+    build: ./app
+    restart: unless-stopped
+    volumes:
+      - "ADD_A_PATH":/var/www/html
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis
+
+  proxy:
+    build: ./proxy
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    labels:
+      com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
+    environment:
+      - DHPARAM_BITS=4096
+    volumes:
+      - "ADD_A_PATH":/etc/nginx/certs:ro
+      - "ADD_A_PATH":/etc/nginx/vhost.d
+      - "ADD_A_PATH":/usr/share/nginx/html
+      - "ADD_A_PATH":/etc/nginx/dhparam/dhparam.pem
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - proxy-tier
+
+  letsencrypt-companion:
+    build: ./letsencrypt
+    restart: unless-stopped
+    environment:
+      - DHPARAM_BITS=4096
+    volumes:
+      - "ADD_A_PATH":/etc/nginx/certs
+      - "ADD_A_PATH":/etc/nginx/vhost.d
+      - "ADD_A_PATH":/usr/share/nginx/html
+      - "ADD_A_PATH":/etc/nginx/dhparam/dhparam.pem
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy-tier
+    depends_on:
+      - proxy
+
+networks:
+  proxy-tier:
