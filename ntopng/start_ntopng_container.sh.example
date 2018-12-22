@@ -1,0 +1,19 @@
+#/bin/bash!
+
+docker run -d \
+        --name ntopng \
+        -p 3000:3000 \
+        -v /etc/timezone:/etc/timezone:ro \
+        -v /etc/localtime:/etc/localtime:ro \
+	--restart unless-stopped \
+	-e "container=docker" \
+	-e NTOPNG_ENV_HOST="$(hostname -f)" \
+	-e NTOPNG_ENV_FRITZBOX_CAPTURE="${1}" \
+	-e NTOPNG_ENV_FRITZBOX_IFACE="${2}" \
+	-e NTOPNG_ENV_FRITZBOX_PASSWORD="${3}" \
+	-e NTOPNG_ENV_FRITZBOX_USER="${4}" \
+	-e NTOPNG_ENV_DEBUG="${NTOPNG_DEBUG}" \
+	--hostname ntopng.$(hostname -f | sed -e 's/^[^.]*\.//') \
+        ntopng:3.7.1
+
+#  --cap-add=SYS_ADMIN -e "container=docker" \
