@@ -1,0 +1,12 @@
+#!/bin/bash
+
+DOCKER_CONFIGS="PLACE_FOR_UNBOUND_CONFIGS"
+
+docker run -d \
+       --name unbound \
+       -p 53:53/udp \
+       -v "${DOCKER_CONFIGS}/etc/unbound/conf.d/:/etc/unbound/conf.d/" \
+       -v "${DOCKER_CONFIGS}/etc/unbound/a-records.conf:/etc/unbound/a-records.conf:ro" \
+       -v /etc/timezone:/etc/timezone:ro \
+       -v /etc/localtime:/etc/localtime:ro \
+       unbound-alpine:1.8.1
